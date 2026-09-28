@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate HTML
+        run: npx --yes html-validate@8 index.html
+      - name: Check that every local asset exists
+        # Paths are case-sensitive on GitHub Pages and Linux hosts; "images/" and "Images/"
+        # are different folders there, which once left the page without its CSS or images.
+        run: |
+          missing=0
+          for ref in $(grep -oE '(src|href)="[^"#:]+"' index.html | cut -d'"' -f2); do
+            [ -e "$ref" ] || { echo "Missing: $ref"; missing=1; }
+          done
+          exit $missing
